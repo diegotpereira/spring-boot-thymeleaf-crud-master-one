@@ -53,14 +53,14 @@ public class Contact implements Serializable {
 	@Size(max = 50)
 	private String address1;
 	
-	@Size
+	@Size(max = 50)
 	private String address2;
 	
-	@Size
+	@Size(max = 50)
 	private String address3;
 	
-	@Size
-	private String postalcode;
+	@Size(max = 20)
+	private String postalCode;
 	
 	@Column
 	private String note;
@@ -121,12 +121,14 @@ public class Contact implements Serializable {
 		this.address3 = address3;
 	}
 
-	public String getPostalcode() {
-		return postalcode;
+
+
+	public String getPostalCode() {
+		return postalCode;
 	}
 
-	public void setPostalcode(String postalcode) {
-		this.postalcode = postalcode;
+	public void setPostalCode(String postalCode) {
+		this.postalCode = postalCode;
 	}
 
 	public String getNote() {
