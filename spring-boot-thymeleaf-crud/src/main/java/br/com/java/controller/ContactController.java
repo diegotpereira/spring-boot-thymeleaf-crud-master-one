@@ -10,10 +10,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import br.com.java.domain.Contact;
+import br.com.java.exception.ResourceNotFoundException;
 import br.com.java.service.ContactService;
 
 @Controller
@@ -49,29 +51,103 @@ public class ContactController {
 		model.addAttribute("next", pageNumber + 1);
 		return "contact-list";
 	}
-	@GetMapping(value= {"/contacts/add"})
-	public String ShowAddContact(Model model) {
-		Contact contact = new Contact();
-		model.addAttribute("add", true);
-		model.addAttribute("contact", contact);
-		
-		return "contact-edit";
+	@GetMapping(value = {"/contacts/add"})
+	public String showAddContact(Model model) {
+	    Contact contact = new Contact();
+	    model.addAttribute("add", true);
+	    model.addAttribute("contact", contact);
+	 
+	    return "contact-edit";
 	}
-	@PostMapping(value="/contacts/add")
-	public String addContact(Model model, 
-			@ModelAttribute("contact") Contact contact) {
+	@PostMapping(value = "/contacts/add")
+	public String addContact(Model model,
+	        @ModelAttribute("contact") Contact contact) {        
+	    try {
+	        Contact newContact = service.save(contact);
+	        return "redirect:/contacts/" + String.valueOf(newContact.getId());
+	    } catch (Exception ex) {
+	        // log exception first, 
+	        // then show error
+	        String errorMessage = ex.getMessage();
+	        logger.error(errorMessage);
+	        model.addAttribute("errorMessage", errorMessage);
+	 
+	        //model.addAttribute("contact", contact);
+	        model.addAttribute("add", true);
+	        return "contact-edit";
+	    }        
+	}
+	@GetMapping(value = {"/contacts/{contactId}/edit"})
+	public String showEditContact(Model model, @PathVariable long contactId) {
+	    Contact contact = null;
+	    try {
+	        contact = service.findById(contactId);
+	    } catch (ResourceNotFoundException ex) {
+	        model.addAttribute("errorMessage", "Contact not found");
+	    }
+	    model.addAttribute("add", false);
+	    model.addAttribute("contact", contact);
+	    return "contact-edit";
+	}
+	@PostMapping(value = {"/contacts/{contactId}/edit"})
+	public String updateContact(Model model,
+	        @PathVariable long contactId,
+	        @ModelAttribute("contact") Contact contact) {        
+	    try {
+	        contact.setId(contactId);
+	        service.update(contact);
+	        return "redirect:/contacts/" + String.valueOf(contact.getId());
+	    } catch (Exception ex) {
+	        // log exception first, 
+	        // then show error
+	        String errorMessage = ex.getMessage();
+	        logger.error(errorMessage);
+	        model.addAttribute("errorMessage", errorMessage);
+	 
+	         model.addAttribute("add", false);
+	        return "contact-edit";
+	    }
+	}
+	@GetMapping(value = "/contacts/{contactId}")
+	public String getContactById(Model model, @PathVariable long contactId) {
+	    Contact contact = null;
+	    try {
+	        contact = service.findById(contactId);
+	    } catch (ResourceNotFoundException ex) {
+	        model.addAttribute("errorMessage", "Contact not found");
+	    }
+	    model.addAttribute("contact", contact);
+	    return "contact";
+	}
+	@GetMapping(value = {"/contacts/{contactId}/delete"})
+	public String showDeleteContactId(Model model ,
+			@PathVariable long contactId) {
+		Contact contact = null;
+		
 		try {
-			Contact newContact = service.save(contact);
-			return "redirect:/contacts/" + String.valueOf(newContact.getId());
-		} catch (Exception e) {
+			contact = service.findById(contactId);
+		} catch (ResourceNotFoundException  e) {
+			// TODO: handle exception
+			model.addAttribute("errorMessage", "contato não encontrado");
+		}
+		model.addAttribute("allowDelete", true);
+		model.addAttribute("contact", contact);
+		return "contact";
+	}
+	@PostMapping(value = {"/contacts/{contactId}/delete"})
+	public String deleteContactId(Model model,
+			@PathVariable long contactId) {
+		try {
+			service.deleteById(contactId);
+			return "redirect:/contacts";
+		} catch (ResourceNotFoundException e) {
 			// TODO: handle exception
 			String errorMessage = e.getMessage();
 			logger.error(errorMessage);
 			model.addAttribute("errorMessage", errorMessage);
-			
-			model.addAttribute("add", true);
-			return "Contact-edit";
+			return "contact";
 		}
+	
 	}
 
 }
